@@ -176,6 +176,8 @@ static ZCONST char Far FilenameTooLongTrunc[] =
 #endif
 static ZCONST char Far ExtraFieldTooLong[] =
   "warning:  extra field too long (%d).  Ignoring...\n";
+static ZCONST char Far ExtraFieldCorrupt[] =
+  "warning:  extra field (type: 0x%04x) corrupt.  Continuing...\n";
 
 #ifdef WINDLL
    static ZCONST char Far DiskFullQuery[] =
@@ -1580,6 +1582,10 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
     int r = IZ_PW_ENTERED;
     char *m;
     char *prompt;
+    char *zfnf;
+    char *efnf;
+    size_t zfnfl;
+    int isOverflow;
 
 #ifndef REENTRANT
     /* tell picky compilers to shut up about "unused variable" warnings */
@@ -1588,7 +1594,15 @@ int UZ_EXP UzpPassword (pG, rcnt, pwbuf, size, zfn, efn)
 
     if (*rcnt == 0) {           /* First call for current entry */
         *rcnt = 2;
-        if ((prompt = (char *)malloc(2*FILNAMSIZ + 15)) != (char *)NULL) {
+        zfnf = FnFilter1(zfn);
+        efnf = FnFilter2(efn);
+        zfnfl = strlen(zfnf);
+        isOverflow = TRUE;
+        if (2*FILNAMSIZ >= zfnfl && (2*FILNAMSIZ - zfnfl) >= strlen(efnf))
+        {
+		isOverflow = FALSE;
+        }
+        if ((isOverflow == FALSE) && ((prompt = (char *)malloc(2*FILNAMSIZ + 15)) != (char *)NULL)) {
             sprintf(prompt, LoadFarString(PasswPrompt),
                     FnFilter1(zfn), FnFilter2(efn));
             m = prompt;
@@ -2295,7 +2309,12 @@ int do_string(__G__ length, option)   /* return PK-type error code */
             if (readbuf(__G__ (char *)G.extra_field, length) == 0)
                 return PK_EOF;
             /* Looks like here is where extra fields are read */
-            getZip64Data(__G__ G.extra_field, length);
+            if (getZip64Data(__G__ G.extra_field, length) != PK_COOL)
+            {
+                Info(slide, 0x401, ((char *)slide,
+                 LoadFarString( ExtraFieldCorrupt), EF_PKSZ64));
+                error = PK_WARN;
+            }
 #ifdef UNICODE_SUPPORT
             G.unipath_filename = NULL;
             if (G.UzO.U_flag < 2) {
