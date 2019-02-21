@@ -52,7 +52,7 @@ CF_NOOPT = -I. -I$(IZ_BZIP2) -DUNIX $(LOC)
 CF = $(CFLAGS) $(CF_NOOPT)
 LFLAGS1 =
 LF = -o unzip$E $(LFLAGS1)
-LF2 = -s
+LF2 = 
 
 # UnZipSFX flags
 SL = -o unzipsfx$E $(LFLAGS1)
@@ -70,7 +70,7 @@ RM = rm -f
 CHMOD = chmod
 BINPERMS = 755
 MANPERMS = 644
-STRIP = strip
+STRIP =
 E =
 O = .o
 M = unix
@@ -776,7 +776,6 @@ freebsd:		unix_make
 #
 gcc:		unix_make
 	$(MAKE) unzips CC=gcc LD=gcc CFLAGS="-O3" LF2=""
-	$(STRIP) $(UNZIPS)
 
 # Heurikon HK68 (68010), UniPlus+ System V 5.0, Green Hills C-68000
 hk68:		unix_make
